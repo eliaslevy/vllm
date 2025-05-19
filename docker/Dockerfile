@@ -45,6 +45,8 @@ ARG GET_PIP_URL="https://bootstrap.pypa.io/get-pip.py"
 # line.
 ARG PIP_INDEX_URL
 ARG PIP_EXTRA_INDEX_URL
+ARG UV_INDEX_URL="${PIP_INDEX_URL}"
+ARG UV_EXTRA_INDEX_URL="${PIP_EXTRA_INDEX_URL}"
 ARG PIP_PYTORCH_CUDA_INDEX_BASE_URL=https://download.pytorch.org/whl
 ARG PIP_PYTORCH_CUDA_NIGHTLY_INDEX_BASE_URL=https://download.pytorch.org/whl/nightly
 
@@ -56,6 +58,7 @@ ARG PIP_PYTORCH_CUDA_NIGHTLY_INDEX_BASE_URL=https://download.pytorch.org/whl/nig
 #
 # Reference: https://pip.pypa.io/en/stable/topics/authentication/#keyring-support
 ARG PIP_KEYRING_PROVIDER=disabled
+ARG UV_KEYRING_PROVIDER="${PIP_KEYRING_PROVIDER}"
 
 #################### BASE BUILD IMAGE ####################
 # prepare basic build environment
@@ -99,9 +102,9 @@ RUN echo 'tzdata tzdata/Areas select America' | debconf-set-selections \
 RUN --mount=type=cache,target=/root/.cache/uv \
     python3 -m pip install uv
 
-ARG PIP_INDEX_URL PIP_EXTRA_INDEX
+ARG PIP_INDEX_URL PIP_EXTRA_INDEX_URL UV_INDEX_URL UV_EXTRA_INDEX_URL
 ARG PIP_PYTORCH_CUDA_INDEX_BASE_URL PIP_PYTORCH_CUDA_NIGHTLY_INDEX_BASE_URL
-ARG PIP_KEYRING_PROVIDER
+ARG PIP_KEYRING_PROVIDER UV_KEYRING_PROVIDER
 
 # This timeout (in seconds) is necessary when installing some dependencies via uv since it's likely to time out
 # Reference: https://github.com/astral-sh/uv/pull/1694
@@ -303,9 +306,9 @@ RUN echo 'tzdata tzdata/Areas select America' | debconf-set-selections \
 RUN --mount=type=cache,target=/root/.cache/uv \
     python3 -m pip install uv
 
-ARG PIP_INDEX_URL PIP_EXTRA_INDEX_URL
+ARG PIP_INDEX_URL PIP_EXTRA_INDEX_URL UV_INDEX_URL UV_EXTRA_INDEX_URL
 ARG PIP_PYTORCH_CUDA_INDEX_BASE_URL PIP_PYTORCH_CUDA_NIGHTLY_INDEX_BASE_URL
-ARG PIP_KEYRING_PROVIDER
+ARG PIP_KEYRING_PROVIDER UV_KEYRING_PROVIDER
 
 # This timeout (in seconds) is necessary when installing some dependencies via uv since it's likely to time out
 # Reference: https://github.com/astral-sh/uv/pull/1694
