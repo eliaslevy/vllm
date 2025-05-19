@@ -49,6 +49,7 @@ ARG UV_INDEX_URL="${PIP_INDEX_URL}"
 ARG UV_EXTRA_INDEX_URL="${PIP_EXTRA_INDEX_URL}"
 ARG PIP_PYTORCH_CUDA_INDEX_BASE_URL=https://download.pytorch.org/whl
 ARG PIP_PYTORCH_CUDA_NIGHTLY_INDEX_BASE_URL=https://download.pytorch.org/whl/nightly
+ARG GOOGLE_APPLICATION_CREDENTIALS
 
 # PIP supports multiple authentication schemes, including keyring
 # By parameterizing the PIP_KEYRING_PROVIDER variable and setting it to
@@ -114,6 +115,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 ARG PIP_INDEX_URL PIP_EXTRA_INDEX_URL UV_INDEX_URL UV_EXTRA_INDEX_URL
 ARG PIP_PYTORCH_CUDA_INDEX_BASE_URL PIP_PYTORCH_CUDA_NIGHTLY_INDEX_BASE_URL
 ARG PIP_KEYRING_PROVIDER UV_KEYRING_PROVIDER
+ARG GOOGLE_APPLICATION_CREDENTIALS
 
 # This timeout (in seconds) is necessary when installing some dependencies via uv since it's likely to time out
 # Reference: https://github.com/astral-sh/uv/pull/1694
@@ -143,6 +145,7 @@ WORKDIR /workspace
 # pytorch will not appear as a vLLM dependency in all of the following steps
 # after this step
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=secret,id=adc \
     if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
         uv pip install --system \
             --index-url ${PIP_PYTORCH_CUDA_NIGHTLY_INDEX_BASE_URL}/cu$(echo $CUDA_VERSION | cut -d. -f1,2 | tr -d '.') \
@@ -155,6 +158,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 COPY requirements/common.txt requirements/common.txt
 COPY requirements/cuda.txt requirements/cuda.txt
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=secret,id=adc \
     uv pip install --system -r requirements/cuda.txt \
     --extra-index-url ${PIP_PYTORCH_CUDA_INDEX_BASE_URL}/cu$(echo $CUDA_VERSION | cut -d. -f1,2 | tr -d '.')
 
@@ -182,6 +186,7 @@ ENV UV_HTTP_TIMEOUT=500
 ENV UV_INDEX_STRATEGY="unsafe-best-match"
 
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=secret,id=adc \
     uv pip install --system -r requirements/build.txt \
     --extra-index-url ${PIP_PYTORCH_CUDA_INDEX_BASE_URL}/cu$(echo $CUDA_VERSION | cut -d. -f1,2 | tr -d '.')
 
@@ -257,12 +262,14 @@ ENV UV_INDEX_STRATEGY="unsafe-best-match"
 
 # Workaround for #17068
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=secret,id=adc \
     uv pip install --system --no-build-isolation "git+https://github.com/state-spaces/mamba@v2.2.4"
 
 COPY requirements/lint.txt requirements/lint.txt
 COPY requirements/test.txt requirements/test.txt
 COPY requirements/dev.txt requirements/dev.txt
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=secret,id=adc \
     uv pip install --system -r requirements/dev.txt \
     --extra-index-url ${PIP_PYTORCH_CUDA_INDEX_BASE_URL}/cu$(echo $CUDA_VERSION | cut -d. -f1,2 | tr -d '.')
 #################### DEV IMAGE ####################
@@ -323,6 +330,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 ARG PIP_INDEX_URL PIP_EXTRA_INDEX_URL UV_INDEX_URL UV_EXTRA_INDEX_URL
 ARG PIP_PYTORCH_CUDA_INDEX_BASE_URL PIP_PYTORCH_CUDA_NIGHTLY_INDEX_BASE_URL
 ARG PIP_KEYRING_PROVIDER UV_KEYRING_PROVIDER
+ARG GOOGLE_APPLICATION_CREDENTIALS
 
 # This timeout (in seconds) is necessary when installing some dependencies via uv since it's likely to time out
 # Reference: https://github.com/astral-sh/uv/pull/1694
@@ -340,6 +348,7 @@ RUN ldconfig /usr/local/cuda-$(echo $CUDA_VERSION | cut -d. -f1,2)/compat/
 # pytorch will not appear as a vLLM dependency in all of the following steps
 # after this step
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=secret,id=adc \
     if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
         uv pip install --system \
             --index-url ${PIP_PYTORCH_CUDA_NIGHTLY_INDEX_BASE_URL}/cu$(echo $CUDA_VERSION | cut -d. -f1,2 | tr -d '.') \
@@ -352,6 +361,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Install vllm wheel first, so that torch etc will be installed.
 RUN --mount=type=bind,from=build,src=/workspace/dist,target=/vllm-workspace/dist \
     --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=secret,id=adc \
     uv pip install --system dist/*.whl --verbose \
         --extra-index-url ${PIP_PYTORCH_CUDA_INDEX_BASE_URL}/cu$(echo $CUDA_VERSION | cut -d. -f1,2 | tr -d '.')
 
@@ -370,6 +380,7 @@ RUN --mount=type=bind,from=build,src=/workspace/dist,target=/vllm-workspace/dist
 # Allow specifying a version, Git revision or local .whl file
 ARG FLASHINFER_WHEEL="git+https://github.com/flashinfer-ai/flashinfer@v0.2.2.post1"
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=secret,id=adc \
 . /etc/environment && \
 if [ "$TARGETPLATFORM" != "linux/arm64" ]; then \
     # TESTING: install FlashInfer from source to test 2.7.0 final RC
@@ -390,6 +401,7 @@ uv pip list
 # TODO: Remove this once FlashInfer AOT wheel is fixed
 COPY requirements/build.txt requirements/build.txt
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=secret,id=adc \
     uv pip install --system -r requirements/build.txt \
         --extra-index-url ${PIP_PYTORCH_CUDA_INDEX_BASE_URL}/cu$(echo $CUDA_VERSION | cut -d. -f1,2 | tr -d '.')
 
@@ -409,18 +421,22 @@ ENV UV_INDEX_STRATEGY="unsafe-best-match"
 
 # Workaround for #17068
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=secret,id=adc \
     uv pip install --system --no-build-isolation "git+https://github.com/state-spaces/mamba@v2.2.4"
 
 # install development dependencies (for testing)
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=secret,id=adc \
     uv pip install --system -r requirements/dev.txt
 
 # install development dependencies (for testing)
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=secret,id=adc \
     uv pip install --system -e tests/vllm_test_utils
 
 # enable fast downloads from hf (for testing)
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=secret,id=adc \
     uv pip install --system hf_transfer
 ENV HF_HUB_ENABLE_HF_TRANSFER 1
 
@@ -446,6 +462,7 @@ ENV UV_HTTP_TIMEOUT=500
 
 # install additional dependencies for openai api server
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=secret,id=adc \
     if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
         uv pip install --system accelerate hf_transfer 'modelscope!=1.15.0' 'bitsandbytes>=0.42.0' 'timm==0.9.10' boto3 runai-model-streamer runai-model-streamer[s3]; \
     else \
