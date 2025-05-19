@@ -19,7 +19,7 @@ ARG FINAL_BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
 #################### BASE BUILD IMAGE ####################
 # prepare basic build environment
 FROM ${BUILD_BASE_IMAGE} AS base
-ARG CUDA_VERSION=12.8.1
+ARG CUDA_VERSION
 ARG PYTHON_VERSION=3.12
 ARG TARGETPLATFORM
 ENV DEBIAN_FRONTEND=noninteractive
@@ -277,7 +277,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # image with vLLM installed
 # TODO: Restore to base image after FlashInfer AOT wheel fixed
 FROM ${FINAL_BASE_IMAGE} AS vllm-base
-ARG CUDA_VERSION=12.8.1
+ARG CUDA_VERSION
 ARG PYTHON_VERSION=3.12
 WORKDIR /vllm-workspace
 ENV DEBIAN_FRONTEND=noninteractive
