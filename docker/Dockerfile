@@ -76,8 +76,11 @@ ENV DEBIAN_FRONTEND=noninteractive
 ARG DEADSNAKES_MIRROR_URL DEADSNAKES_GPGKEY_URL
 ARG GET_PIP_URL
 
+ARG GOOGLE_APPLICATION_CREDENTIALS
+
 # Install Python and other dependencies
-RUN echo 'tzdata tzdata/Areas select America' | debconf-set-selections \
+RUN --mount=type=secret,id=adc \
+    echo 'tzdata tzdata/Areas select America' | debconf-set-selections \
     && echo 'tzdata tzdata/Zones/America select Los_Angeles' | debconf-set-selections \
     && apt-get update -y \
     && apt-get install -y ccache software-properties-common git curl sudo \
@@ -115,7 +118,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 ARG PIP_INDEX_URL PIP_EXTRA_INDEX_URL UV_INDEX_URL UV_EXTRA_INDEX_URL
 ARG PIP_PYTORCH_CUDA_INDEX_BASE_URL PIP_PYTORCH_CUDA_NIGHTLY_INDEX_BASE_URL
 ARG PIP_KEYRING_PROVIDER UV_KEYRING_PROVIDER
-ARG GOOGLE_APPLICATION_CREDENTIALS
 
 # This timeout (in seconds) is necessary when installing some dependencies via uv since it's likely to time out
 # Reference: https://github.com/astral-sh/uv/pull/1694
@@ -124,7 +126,8 @@ ENV UV_INDEX_STRATEGY="unsafe-best-match"
 
 # Upgrade to GCC 10 to avoid https://gcc.gnu.org/bugzilla/show_bug.cgi?id=92519
 # as it was causing spam when compiling the CUTLASS kernels
-RUN apt-get install -y gcc-10 g++-10
+RUN --mount=type=secret,id=adc \
+    apt-get install -y gcc-10 g++-10
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 110 --slave /usr/bin/g++ g++ /usr/bin/g++-10
 RUN <<EOF
 gcc --version
@@ -287,11 +290,14 @@ ARG TARGETPLATFORM
 ARG DEADSNAKES_MIRROR_URL DEADSNAKES_GPGKEY_URL
 ARG GET_PIP_URL
 
+ARG GOOGLE_APPLICATION_CREDENTIALS
+
 RUN PYTHON_VERSION_STR=$(echo ${PYTHON_VERSION} | sed 's/\.//g') && \
     echo "export PYTHON_VERSION_STR=${PYTHON_VERSION_STR}" >> /etc/environment
 
 # Install Python and other dependencies
-RUN echo 'tzdata tzdata/Areas select America' | debconf-set-selections \
+RUN --mount=type=secret,id=adc \
+    echo 'tzdata tzdata/Areas select America' | debconf-set-selections \
     && echo 'tzdata tzdata/Zones/America select Los_Angeles' | debconf-set-selections \
     && apt-get update -y \
     && apt-get install -y ccache software-properties-common git curl wget sudo vim python3-pip \
@@ -330,7 +336,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 ARG PIP_INDEX_URL PIP_EXTRA_INDEX_URL UV_INDEX_URL UV_EXTRA_INDEX_URL
 ARG PIP_PYTORCH_CUDA_INDEX_BASE_URL PIP_PYTORCH_CUDA_NIGHTLY_INDEX_BASE_URL
 ARG PIP_KEYRING_PROVIDER UV_KEYRING_PROVIDER
-ARG GOOGLE_APPLICATION_CREDENTIALS
 
 # This timeout (in seconds) is necessary when installing some dependencies via uv since it's likely to time out
 # Reference: https://github.com/astral-sh/uv/pull/1694
