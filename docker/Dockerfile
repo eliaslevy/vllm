@@ -59,9 +59,13 @@ ARG PYTORCH_CUDA_NIGHTLY_INDEX_BASE_URL=https://download.pytorch.org/whl/nightly
 # their private Python indexes, while not changing the default behavior which
 # is no authentication.
 #
+# To install keyring providers, they can be specified in PYTHON_KEYRING_PROVIDERS
+# and PIP_KEYRING_PROVIDER set to "subprocess" (uv does not support "import").
+#
 # Reference: https://pip.pypa.io/en/stable/topics/authentication/#keyring-support
 ARG PIP_KEYRING_PROVIDER=disabled
 ARG UV_KEYRING_PROVIDER=${PIP_KEYRING_PROVIDER}
+ARG PYTHON_KEYRING_PROVIDERS
 
 # Flag enables build-in KV-connector dependency libs into docker images
 ARG INSTALL_KV_CONNECTORS=false
@@ -110,6 +114,12 @@ ARG PIP_EXTRA_INDEX_URL UV_EXTRA_INDEX_URL
 ARG PYTORCH_CUDA_INDEX_BASE_URL
 ARG PYTORCH_CUDA_NIGHTLY_INDEX_BASE_URL
 ARG PIP_KEYRING_PROVIDER UV_KEYRING_PROVIDER
+
+# Install keyring providers
+ARG PYTHON_KEYRING_PROVIDERS
+RUN if [ ! -z "${PYTHON_KEYRING_PROVIDERS}" ]; then \
+      python3 -m pip install ${PYTHON_KEYRING_PROVIDERS}; \
+    fi
 
 # Install uv for faster pip installs
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -327,6 +337,12 @@ ARG PIP_EXTRA_INDEX_URL UV_EXTRA_INDEX_URL
 ARG PYTORCH_CUDA_INDEX_BASE_URL
 ARG PYTORCH_CUDA_NIGHTLY_INDEX_BASE_URL
 ARG PIP_KEYRING_PROVIDER UV_KEYRING_PROVIDER
+
+# Install keyring and AR keyring backend
+ARG PYTHON_KEYRING_PROVIDERS
+RUN if [ ! -z "${PYTHON_KEYRING_PROVIDERS}" ]; then \
+      python3 -m pip install ${PYTHON_KEYRING_PROVIDERS}; \
+    fi
 
 # Install uv for faster pip installs
 RUN --mount=type=cache,target=/root/.cache/uv \
