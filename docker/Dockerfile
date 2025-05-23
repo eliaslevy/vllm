@@ -56,9 +56,13 @@ ARG PIP_PYTORCH_CUDA_NIGHTLY_INDEX_BASE_URL=https://download.pytorch.org/whl/nig
 # their private Python indexes, while not changing the default behavior which
 # is no authentication.
 #
+# To install keyring providers, they can be specified in PYTHON_KEYRING_PROVIDERS
+# and PIP_KEYRING_PROVIDER set to "subprocess" (uv does not support "import").
+#
 # Reference: https://pip.pypa.io/en/stable/topics/authentication/#keyring-support
 ARG PIP_KEYRING_PROVIDER=disabled
 ARG UV_KEYRING_PROVIDER="${PIP_KEYRING_PROVIDER}"
+ARG PYTHON_KEYRING_PROVIDERS
 
 #################### BASE BUILD IMAGE ####################
 # prepare basic build environment
@@ -97,6 +101,11 @@ RUN echo 'tzdata tzdata/Areas select America' | debconf-set-selections \
     && curl -sS ${GET_PIP_URL} | python${PYTHON_VERSION} \
     && python3 --version && python3 -m pip --version
 
+# Install keyring and AR keyring backend
+ARG PYTHON_KEYRING_PROVIDERS
+RUN if [ ! -z "${PYTHON_KEYRING_PROVIDERS}" ]; then \
+      python3 -m pip install ${PYTHON_KEYRING_PROVIDERS}; \
+    fi
 
 # Install uv for faster pip installs
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -301,6 +310,11 @@ RUN echo 'tzdata tzdata/Areas select America' | debconf-set-selections \
     && curl -sS ${GET_PIP_URL} | python${PYTHON_VERSION} \
     && python3 --version && python3 -m pip --version
 
+# Install keyring and AR keyring backend
+ARG PYTHON_KEYRING_PROVIDERS
+RUN if [ ! -z "${PYTHON_KEYRING_PROVIDERS}" ]; then \
+      python3 -m pip install ${PYTHON_KEYRING_PROVIDERS}; \
+    fi
 
 # Install uv for faster pip installs
 RUN --mount=type=cache,target=/root/.cache/uv \
